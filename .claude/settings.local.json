@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__github_com_supabase-community_supabase-mcp__list_projects",
+      "mcp__github_com_supabase-community_supabase-mcp__list_organizations",
+      "mcp__github_com_supabase-community_supabase-mcp__get_cost",
+      "mcp__github_com_supabase-community_supabase-mcp__confirm_cost",
+      "mcp__github_com_supabase-community_supabase-mcp__create_project",
+      "mcp__github_com_supabase-community_supabase-mcp__apply_migration",
+      "mcp__github_com_supabase-community_supabase-mcp__get_project_url",
+      "mcp__github_com_supabase-community_supabase-mcp__get_anon_key",
+      "Bash(npm install:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__github_com_supabase-community_supabase-mcp__list_tables",
+      "mcp__github_com_supabase-community_supabase-mcp__execute_sql",
+      "mcp__playwright__browser_wait_for"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "github.com/supabase-community/supabase-mcp",
+    "playwright"
+  ]
+}
