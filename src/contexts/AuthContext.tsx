@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { UserProfile } from '@/types'
@@ -33,6 +33,85 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const createUserProfile = useCallback(async (userId: string) => {
+    try {
+      // Get user details from auth
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          full_name: user?.user_metadata?.full_name || user?.email || 'User',
+          role: 'USER',
+          is_active: true
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating user profile:', error)
+        return
+      }
+
+      console.log('✅ User profile created successfully:', data)
+      setUserProfile(data)
+    } catch (error) {
+      console.error('Error creating user profile:', error)
+    }
+  }, [])
+
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        console.log('Profile not found, creating new one...')
+        await createUserProfile(userId)
+        return
+      }
+
+      if (error) {
+        console.error('Error fetching user profile:', error)
+        return
+      }
+
+      setUserProfile(data)
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
+  }, [createUserProfile])
+
+  const updateLastLogin = useCallback(async () => {
+    if (!user) return
+
+    try {
+      // Get user's IP address (simplified version)
+      const response = await fetch('https://api.ipify.org?format=json')
+      const { ip } = await response.json()
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          id: user.id,
+          last_login_at: new Date().toISOString(),
+          last_login_ip: ip,
+          updated_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error updating last login:', error)
+      }
+    } catch (error) {
+      console.error('Error updating last login:', error)
+    }
+  }, [user])
 
   useEffect(() => {
     // Get initial session
@@ -71,51 +150,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     )
 
     return () => subscription.unsubscribe()
-  }, [])
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user profile:', error)
-        return
-      }
-
-      setUserProfile(data)
-    } catch (error) {
-      console.error('Error fetching user profile:', error)
-    }
-  }
-
-  const updateLastLogin = async () => {
-    if (!user) return
-
-    try {
-      // Get user's IP address (simplified version)
-      const response = await fetch('https://api.ipify.org?format=json')
-      const { ip } = await response.json()
-
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          id: user.id,
-          last_login_at: new Date().toISOString(),
-          last_login_ip: ip,
-          updated_at: new Date().toISOString()
-        })
-
-      if (error) {
-        console.error('Error updating last login:', error)
-      }
-    } catch (error) {
-      console.error('Error updating last login:', error)
-    }
-  }
+  }, [fetchUserProfile, updateLastLogin])
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({

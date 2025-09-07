@@ -30,3 +30,12 @@ yarn-error.log*
 # OS
 Thumbs.db
 *.log
+
+# Claude AI
+.claude/
+
+# Image files
+*.jpg
+*.png
+*.gif
+*.jpeg

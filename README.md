@@ -211,3 +211,65 @@
 ✅ **ESSO σύστημα** με έτη και γράμματα Α-ΣΤ  
 
 ## 💾 Το σύστημα είναι πλήρως λειτουργικό και έτοιμο για παραγωγή!
+
+## 🚀 Οδηγίες Deployment
+
+### Τοπική Εκτέλεση
+
+1. **Κλωνοποίηση του repository:**
+```bash
+git clone <repository-url>
+cd golidak
+```
+
+2. **Εγκατάσταση dependencies:**
+```bash
+npm install
+```
+
+3. **Ρύθμιση περιβάλλοντος:**
+   - Αντιγράψτε το `.env.example` σε `.env`
+   - Συμπληρώστε τα απαραίτητα Supabase credentials:
+```bash
+cp .env.example .env
+```
+
+4. **Εκκίνηση της εφαρμογής:**
+```bash
+npm start
+```
+
+### Deployment σε Vercel
+
+1. **Προετοιμασία για GitHub:**
+```bash
+git add .
+git commit -m "Prepare for deployment"
+git push origin main
+```
+
+2. **Στο Vercel Dashboard:**
+   - Συνδέστε το GitHub repository
+   - Ορίστε τις environment variables:
+     - `REACT_APP_SUPABASE_URL`
+     - `REACT_APP_SUPABASE_ANON_KEY`
+   - Το build command είναι: `npm run build`
+   - Το output directory είναι: `build`
+
+3. **Αυτόματο deployment:** Κάθε push στο main branch θα τρέχει αυτόματα νέο deployment
+
+### Environment Variables
+
+Απαραίτητες μεταβλητές περιβάλλοντος:
+- `REACT_APP_SUPABASE_URL`: Το URL του Supabase project
+- `REACT_APP_SUPABASE_ANON_KEY`: Το anonymous key από το Supabase
+
+### Τεχνολογίες
+
+- **Frontend**: React 18 + TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Build Tool**: Create React App με CRACO
+- **Deployment**: Vercel Ready
