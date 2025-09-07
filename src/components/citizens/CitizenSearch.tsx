@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase'
 import { Citizen, SearchFilters } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Search, Phone, Mail, MapPin, Users, Filter } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -91,49 +90,58 @@ export const CitizenSearch: React.FC<CitizenSearchProps> = ({ onSelectCitizen })
     if (Object.values(filters).some(value => value)) {
       handleSearch()
     }
-  }, [filters])
+  }, [filters]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="space-y-6">
-      {/* Search Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Αναζήτηση Πολιτών
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Basic Search Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium block mb-1">Όνομα</label>
+    <div className="space-y-6 lg:space-y-8 animate-fade-in-up">
+      {/* Modern Search Form with Glass Effect */}
+      <div className="glass-card p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-primary/10 rounded-xl">
+            <Search className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Αναζήτηση Πολιτών</h2>
+            <p className="text-sm text-foreground-muted">Βρείτε πολίτες χρησιμοποιώντας τα παρακάτω φίλτρα</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Basic Search Fields - Responsive Grid */}
+          <div className="grid-responsive">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Όνομα</label>
               <Input
-                placeholder="Όνομα"
+                className="input-modern"
+                placeholder="Εισάγετε όνομα..."
                 value={filters.name || ''}
                 onChange={(e) => handleFilterChange('name', e.target.value)}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium block mb-1">Επώνυμο</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Επώνυμο</label>
               <Input
-                placeholder="Επώνυμο"
+                className="input-modern"
+                placeholder="Εισάγετε επώνυμο..."
                 value={filters.surname || ''}
                 onChange={(e) => handleFilterChange('surname', e.target.value)}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium block mb-1">Τηλέφωνο</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Τηλέφωνο</label>
               <Input
-                placeholder="Τηλέφωνο"
+                className="input-modern"
+                placeholder="Εισάγετε τηλέφωνο..."
                 value={filters.phone || ''}
                 onChange={(e) => handleFilterChange('phone', e.target.value)}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium block mb-1">Email</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Email</label>
               <Input
-                placeholder="Email"
+                className="input-modern"
+                placeholder="Εισάγετε email..."
                 value={filters.email || ''}
                 onChange={(e) => handleFilterChange('email', e.target.value)}
               />
@@ -144,19 +152,19 @@ export const CitizenSearch: React.FC<CitizenSearchProps> = ({ onSelectCitizen })
           <Button
             variant="outline"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full"
+            className="w-full glass-card border-card-border hover:border-border-hover transition-all duration-300"
           >
             <Filter className="h-4 w-4 mr-2" />
             {showAdvanced ? 'Απόκρυψη' : 'Εμφάνιση'} Προηγμένων Φίλτρων
           </Button>
 
-          {/* Advanced Search Fields */}
+          {/* Advanced Search Fields with Animation */}
           {showAdvanced && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-              <div>
-                <label className="text-sm font-medium block mb-1">Δήμος</label>
+            <div className="animate-fade-in-up grid-responsive pt-6 border-t border-card-border">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Δήμος</label>
                 <select
-                  className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm"
+                  className="input-modern"
                   value={filters.municipality || ''}
                   onChange={(e) => handleFilterChange('municipality', e.target.value)}
                 >
@@ -168,10 +176,10 @@ export const CitizenSearch: React.FC<CitizenSearchProps> = ({ onSelectCitizen })
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">Εκλογική Περιφέρεια</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Εκλογική Περιφέρεια</label>
                 <select
-                  className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm"
+                  className="input-modern"
                   value={filters.electoral_district || ''}
                   onChange={(e) => handleFilterChange('electoral_district', e.target.value)}
                 >
@@ -183,10 +191,11 @@ export const CitizenSearch: React.FC<CitizenSearchProps> = ({ onSelectCitizen })
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="text-sm font-medium block mb-1">Σύσταση από</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Σύσταση από</label>
                 <Input
-                  placeholder="Σύσταση από"
+                  className="input-modern"
+                  placeholder="Εισάγετε όνομα συστήνοντος..."
                   value={filters.recommendation_from || ''}
                   onChange={(e) => handleFilterChange('recommendation_from', e.target.value)}
                 />
@@ -194,97 +203,175 @@ export const CitizenSearch: React.FC<CitizenSearchProps> = ({ onSelectCitizen })
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Button onClick={handleSearch} disabled={loading} className="flex-1">
-              {loading ? 'Αναζήτηση...' : 'Αναζήτηση'}
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={handleSearch} 
+              disabled={loading} 
+              className="btn-primary flex-1 disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                  Αναζήτηση...
+                </div>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Αναζήτηση
+                </>
+              )}
             </Button>
-            <Button variant="outline" onClick={clearFilters}>
+            <Button 
+              variant="outline" 
+              onClick={clearFilters}
+              className="btn-secondary"
+            >
               Καθαρισμός
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Results */}
+      {/* Modern Results Section */}
       {citizens.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Αποτελέσματα ({citizens.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {citizens.map((citizen) => (
-                <div
-                  key={citizen.id}
-                  className="p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
-                  onClick={() => onSelectCitizen?.(citizen)}
-                >
+        <div className="glass-card p-6 lg:p-8 animate-fade-in-up">
+          {/* Results Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-success/10 rounded-xl">
+                <Users className="h-6 w-6 text-success" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground">Αποτελέσματα</h3>
+                <p className="text-sm text-foreground-muted">
+                  Βρέθηκαν {citizens.length} πολίτες
+                </p>
+              </div>
+            </div>
+            
+            {/* Results count badge */}
+            <div className="px-4 py-2 bg-primary/10 rounded-full">
+              <span className="text-primary font-semibold">{citizens.length}</span>
+            </div>
+          </div>
+
+          {/* Citizens Grid - Responsive Layout */}
+          <div className="grid-responsive-lg">
+            {citizens.map((citizen) => (
+              <div
+                key={citizen.id}
+                className="glass-card p-6 cursor-pointer group hover:scale-[1.02] transition-all duration-300"
+                onClick={() => onSelectCitizen?.(citizen)}
+              >
+                <div className="space-y-4">
+                  {/* Citizen Header */}
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-lg">
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
                         {citizen.surname} {citizen.name}
-                      </h3>
-                      
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        {citizen.mobile_phone && (
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {citizen.mobile_phone}
-                          </span>
-                        )}
-                        {citizen.email && (
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {citizen.email}
-                          </span>
-                        )}
-                        {citizen.municipality && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {citizen.municipality}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2">
-                        {citizen.electoral_district && (
-                          <Badge variant="secondary">
-                            {citizen.electoral_district}
-                          </Badge>
-                        )}
-                        {citizen.recommendation_from && (
-                          <Badge variant="outline">
-                            Σύσταση: {citizen.recommendation_from}
-                          </Badge>
-                        )}
-                      </div>
+                      </h4>
+                      <div className="h-0.5 w-12 bg-gradient-to-r from-primary to-accent rounded-full"></div>
                     </div>
-
-                    <div className="text-right text-sm text-muted-foreground">
-                      {citizen.last_contact_date && (
-                        <p>Τελευταία επικοινωνία: {formatDate(citizen.last_contact_date)}</p>
-                      )}
-                      <p>Εγγραφή: {formatDate(citizen.created_at)}</p>
+                    <div className="p-2 bg-primary/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Search className="h-4 w-4 text-primary" />
                     </div>
                   </div>
+
+                  {/* Contact Information */}
+                  <div className="space-y-3">
+                    {citizen.mobile_phone && (
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-accent/10 rounded-lg">
+                          <Phone className="h-4 w-4 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-foreground-muted">Κινητό</p>
+                          <p className="font-medium text-foreground">{citizen.mobile_phone}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {citizen.email && (
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Mail className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground-muted">Email</p>
+                          <p className="font-medium text-foreground truncate">{citizen.email}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {citizen.municipality && (
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-warning/10 rounded-lg">
+                          <MapPin className="h-4 w-4 text-warning" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-foreground-muted">Δήμος</p>
+                          <p className="font-medium text-foreground">{citizen.municipality}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {citizen.electoral_district && (
+                      <Badge className="bg-secondary/20 text-secondary-foreground border-secondary/30">
+                        {citizen.electoral_district}
+                      </Badge>
+                    )}
+                    {citizen.recommendation_from && (
+                      <Badge variant="outline" className="border-accent/30 text-accent">
+                        Σύσταση: {citizen.recommendation_from}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Footer Info */}
+                  <div className="pt-4 border-t border-card-border space-y-1">
+                    {citizen.last_contact_date && (
+                      <p className="text-xs text-foreground-muted">
+                        Τελευταία επικοινωνία: {formatDate(citizen.last_contact_date)}
+                      </p>
+                    )}
+                    <p className="text-xs text-foreground-muted">
+                      Εγγραφή: {formatDate(citizen.created_at)}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
+      {/* No Results Message */}
       {citizens.length === 0 && Object.values(filters).some(value => value) && !loading && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <p className="text-muted-foreground">
-              Δεν βρέθηκαν πολίτες με τα συγκεκριμένα κριτήρια
-            </p>
-          </CardContent>
-        </Card>
+        <div className="glass-card p-8 lg:p-12 text-center animate-fade-in-up">
+          <div className="max-w-md mx-auto space-y-4">
+            <div className="p-4 bg-muted/10 rounded-xl inline-block">
+              <Search className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Δεν βρέθηκαν αποτελέσματα</h3>
+              <p className="text-foreground-muted">
+                Δεν βρέθηκαν πολίτες με τα συγκεκριμένα κριτήρια αναζήτησης.
+                Δοκιμάστε να αλλάξετε τα φίλτρα σας.
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={clearFilters}
+              className="btn-secondary"
+            >
+              Καθαρισμός Φίλτρων
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   )

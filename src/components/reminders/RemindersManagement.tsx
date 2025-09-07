@@ -107,7 +107,7 @@ export const RemindersManagement: React.FC = () => {
 
   const createHolidayReminders = async () => {
     try {
-      const currentYear = new Date().getFullYear()
+      // const currentYear = new Date().getFullYear() // Currently not used
       const existingHolidays = reminders.filter(r => r.reminder_type === 'ΕΟΡΤΗ')
       
       const holidaysToAdd = greekHolidays.filter(holiday => {

@@ -68,7 +68,7 @@ export const MilitaryManagement: React.FC = () => {
 
   useEffect(() => {
     loadPersonnel()
-  }, [filters])
+  }, [filters]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddNew = () => {
     setSelectedPersonnel(null)

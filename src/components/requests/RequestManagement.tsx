@@ -114,7 +114,7 @@ export const RequestManagement: React.FC = () => {
 
   useEffect(() => {
     loadRequests()
-  }, [filters])
+  }, [filters]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check for pending requests over 25 days
   const checkPendingRequests = () => {

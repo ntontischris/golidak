@@ -77,89 +77,49 @@ export const StatisticsDashboard: React.FC = () => {
           break
       }
 
-      // Parallel data fetching
+      // Optimized single-query approach using database functions
       const [
-        citizensRes,
-        militaryRes,
-        requestsRes,
-        remindersRes,
-        recentCitizensRes,
-        recentMilitaryRes,
-        recentRequestsRes,
-        completedRequestsRes
+        dashboardStatsRes,
+        recentStatsRes
       ] = await Promise.all([
-        // Total counts
-        supabase.from('citizens').select('*'),
-        supabase.from('military_personnel').select('*'),
-        supabase.from('requests').select('*'),
-        supabase.from('reminders').select('*'),
+        // Get all main statistics in one optimized query
+        supabase.rpc('get_dashboard_stats'),
         
-        // Recent activity
-        supabase.from('citizens').select('*').gte('created_at', startDate.toISOString()),
-        supabase.from('military_personnel').select('*').gte('created_at', startDate.toISOString()),
-        supabase.from('requests').select('*').gte('created_at', startDate.toISOString()),
-        supabase.from('requests').select('*').eq('status', 'ΟΛΟΚΛΗΡΩΘΗΚΕ').gte('updated_at', startDate.toISOString())
+        // Get recent activity stats
+        supabase.rpc('get_recent_activity_stats', { 
+          start_date: startDate.toISOString()
+        })
       ])
 
-      if (citizensRes.error || militaryRes.error || requestsRes.error || remindersRes.error) {
-        console.error('Error loading statistics')
+      if (dashboardStatsRes.error || recentStatsRes.error) {
+        console.error('Error loading statistics:', dashboardStatsRes.error || recentStatsRes.error)
         return
       }
 
-      const citizens = citizensRes.data || []
-      const military = militaryRes.data || []
-      const requests = requestsRes.data || []
-      const reminders = remindersRes.data || []
+      const dashboardStats = dashboardStatsRes.data || {}
+      const recentStats = recentStatsRes.data || {}
 
-      // Process data
+      // Process optimized data from database functions
       const statistics: StatisticsData = {
-        totalCitizens: citizens.length,
-        totalMilitary: military.length,
-        totalRequests: requests.length,
-        totalReminders: reminders.length,
+        totalCitizens: dashboardStats.total_citizens || 0,
+        totalMilitary: dashboardStats.total_military || 0,
+        totalRequests: dashboardStats.total_requests || 0,
+        totalReminders: dashboardStats.total_reminders || 0,
 
-        // Citizens by municipality
-        citizensByMunicipality: citizens.reduce((acc, citizen) => {
-          const municipality = citizen.municipality || 'Άγνωστο'
-          acc[municipality] = (acc[municipality] || 0) + 1
-          return acc
-        }, {} as Record<string, number>),
+        // Pre-aggregated data from database
+        citizensByMunicipality: dashboardStats.citizens_by_municipality || {},
+        militaryByRank: dashboardStats.military_by_rank || {},
+        requestsByStatus: dashboardStats.requests_by_status || {},
+        essoStatistics: dashboardStats.esso_statistics || {},
+        citizensByDistrict: dashboardStats.citizens_by_district || {},
 
-        // Military by rank
-        militaryByRank: military.reduce((acc, person) => {
-          const rank = person.rank || 'Άγνωστος'
-          acc[rank] = (acc[rank] || 0) + 1
-          return acc
-        }, {} as Record<string, number>),
-
-        // Requests by status
-        requestsByStatus: requests.reduce((acc, request) => {
-          acc[request.status] = (acc[request.status] || 0) + 1
-          return acc
-        }, {} as Record<string, number>),
-
-        // Recent activity
+        // Recent activity from optimized query
         recentActivity: {
-          newCitizens: recentCitizensRes.data?.length || 0,
-          newMilitary: recentMilitaryRes.data?.length || 0,
-          newRequests: recentRequestsRes.data?.length || 0,
-          completedRequests: completedRequestsRes.data?.length || 0
+          newCitizens: recentStats.new_citizens || 0,
+          newMilitary: recentStats.new_military || 0,
+          newRequests: recentStats.new_requests || 0,
+          completedRequests: recentStats.completed_requests || 0
         },
-
-        // ESSO statistics
-        essoStatistics: military.reduce((acc, person) => {
-          if (person.esso) {
-            acc[person.esso] = (acc[person.esso] || 0) + 1
-          }
-          return acc
-        }, {} as Record<string, number>),
-
-        // Citizens by electoral district
-        citizensByDistrict: citizens.reduce((acc, citizen) => {
-          const district = citizen.electoral_district || 'Άγνωστη'
-          acc[district] = (acc[district] || 0) + 1
-          return acc
-        }, {} as Record<string, number>),
 
         // Monthly statistics (simplified)
         monthlyStats: []
@@ -175,7 +135,7 @@ export const StatisticsDashboard: React.FC = () => {
 
   useEffect(() => {
     loadStatistics()
-  }, [timeRange])
+  }, [timeRange]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (

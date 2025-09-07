@@ -6,7 +6,8 @@ import { CitizenSearch } from './CitizenSearch'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Eye } from 'lucide-react'
+import { Users, Plus, Edit, Trash2, Phone, Mail, MapPin, Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { formatDate } from '@/lib/utils'
 
 type ViewMode = 'list' | 'form' | 'view'
@@ -16,14 +17,50 @@ export const CitizenManagement: React.FC = () => {
   const [selectedCitizen, setSelectedCitizen] = useState<Citizen | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const [municipalityFilter, setMunicipalityFilter] = useState('')
+  const ITEMS_PER_PAGE = 20
 
-  const loadCitizens = async () => {
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300) // 300ms debounce
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  const loadCitizens = async (page = 1, search = '', municipality = '') => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('citizens')
-        .select('*')
+        .select(`
+          id, surname, name, patronymic, mobile_phone, email, 
+          municipality, electoral_district, last_contact_date, 
+          recommendation_from, created_at, updated_at
+        `, { count: 'exact' })
         .order('created_at', { ascending: false })
+
+      // Apply search filter
+      if (search.trim()) {
+        query = query.or(`surname.ilike.%${search}%,name.ilike.%${search}%,mobile_phone.ilike.%${search}%,email.ilike.%${search}%`)
+      }
+
+      // Apply municipality filter
+      if (municipality) {
+        query = query.eq('municipality', municipality)
+      }
+
+      // Apply pagination
+      const from = (page - 1) * ITEMS_PER_PAGE
+      const to = from + ITEMS_PER_PAGE - 1
+      query = query.range(from, to)
+
+      const { data, error, count } = await query
 
       if (error) {
         console.error('Error loading citizens:', error)
@@ -31,6 +68,8 @@ export const CitizenManagement: React.FC = () => {
       }
 
       setCitizens(data || [])
+      setTotalCount(count || 0)
+      setCurrentPage(page)
     } catch (error) {
       console.error('Error loading citizens:', error)
     } finally {
@@ -39,7 +78,11 @@ export const CitizenManagement: React.FC = () => {
   }
 
   useEffect(() => {
-    loadCitizens()
+    loadCitizens(1, debouncedSearchTerm, municipalityFilter)
+  }, [debouncedSearchTerm, municipalityFilter])
+
+  useEffect(() => {
+    loadCitizens(1)
   }, [])
 
   const handleAddNew = () => {
@@ -250,7 +293,7 @@ export const CitizenManagement: React.FC = () => {
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Διαχείριση Πολιτών ({citizens.length})
+              Διαχείριση Πολιτών ({totalCount})
             </span>
             <Button onClick={handleAddNew}>
               <Plus className="h-4 w-4 mr-2" />
@@ -260,7 +303,47 @@ export const CitizenManagement: React.FC = () => {
         </CardHeader>
       </Card>
 
-      {/* Search */}
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Αναζήτηση (επώνυμο, όνομα, τηλέφωνο, email)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+                {searchTerm !== debouncedSearchTerm && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="w-full md:w-64">
+              <select
+                value={municipalityFilter}
+                onChange={(e) => setMunicipalityFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              >
+                <option value="">Όλοι οι Δήμοι</option>
+                <option value="ΠΑΥΛΟΥ ΜΕΛΑ">ΠΑΥΛΟΥ ΜΕΛΑ</option>
+                <option value="ΚΟΡΔΕΛΙΟΥ-ΕΥΟΣΜΟΥ">ΚΟΡΔΕΛΙΟΥ-ΕΥΟΣΜΟΥ</option>
+                <option value="ΑΜΠΕΛΟΚΗΠΩΝ-ΜΕΝΕΜΕΝΗΣ">ΑΜΠΕΛΟΚΗΠΩΝ-ΜΕΝΕΜΕΝΗΣ</option>
+                <option value="ΝΕΑΠΟΛΗΣ-ΣΥΚΕΩΝ">ΝΕΑΠΟΛΗΣ-ΣΥΚΕΩΝ</option>
+                <option value="ΘΕΣΣΑΛΟΝΙΚΗΣ">ΘΕΣΣΑΛΟΝΙΚΗΣ</option>
+                <option value="ΚΑΛΑΜΑΡΙΑΣ">ΚΑΛΑΜΑΡΙΑΣ</option>
+                <option value="ΑΛΛΟ">ΑΛΛΟ</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Advanced Search */}
       <CitizenSearch onSelectCitizen={handleSelectFromSearch} />
 
       {/* Citizens List */}
@@ -364,6 +447,37 @@ export const CitizenManagement: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && totalCount > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Σελίδα {currentPage} από {Math.ceil(totalCount / ITEMS_PER_PAGE)} 
+                · Σύνολο {totalCount.toLocaleString('el-GR')} πολίτες
+                · Εμφάνιση {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, totalCount)} - {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadCitizens(currentPage - 1, debouncedSearchTerm, municipalityFilter)}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Προηγούμενη
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadCitizens(currentPage + 1, debouncedSearchTerm, municipalityFilter)}
+                  disabled={currentPage >= Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                >
+                  Επόμενη
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

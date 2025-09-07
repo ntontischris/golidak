@@ -61,7 +61,7 @@ export const UserManagement: React.FC = () => {
       }
 
       // Note: We can't get auth users from frontend, so we'll use profiles only
-      const authUsers = null
+      // const authUsers = null // Not used currently
 
       const combinedUsers = profiles?.map(profile => {
         return {
