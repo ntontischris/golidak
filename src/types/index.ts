@@ -66,6 +66,7 @@ export interface Reminder {
 
 export interface UserProfile {
   id: string
+  email?: string
   full_name?: string
   role: UserRole
   last_login_at?: string

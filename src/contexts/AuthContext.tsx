@@ -8,7 +8,6 @@ interface AuthContextType {
   userProfile: UserProfile | null
   session: Session | null
   loading: boolean
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   updateLastLogin: () => Promise<void>
@@ -92,16 +91,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return
 
     try {
-      // Get user's IP address (simplified version)
-      const response = await fetch('https://api.ipify.org?format=json')
-      const { ip } = await response.json()
-
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
           id: user.id,
           last_login_at: new Date().toISOString(),
-          last_login_ip: ip,
+          last_login_ip: '127.0.0.1',
           updated_at: new Date().toISOString()
         })
 
@@ -152,19 +147,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe()
   }, [fetchUserProfile, updateLastLogin])
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        }
-      }
-    })
-
-    return { error }
-  }
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -184,7 +166,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userProfile,
     session,
     loading,
-    signUp,
     signIn,
     signOut,
     updateLastLogin

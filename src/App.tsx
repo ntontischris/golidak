@@ -1,24 +1,24 @@
 import React, { useState } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { LoginForm } from '@/components/auth/LoginForm'
-import { RegisterForm } from '@/components/auth/RegisterForm'
 import { Dashboard } from '@/components/Dashboard'
+import { HomePage } from '@/components/HomePage'
 import '@/globals.css'
 
 function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true)
+  const [showLogin, setShowLogin] = useState(false)
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {isLogin ? (
-          <LoginForm onToggleMode={() => setIsLogin(false)} />
-        ) : (
-          <RegisterForm onToggleMode={() => setIsLogin(true)} />
-        )}
+  if (showLogin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <LoginForm onBack={() => setShowLogin(false)} />
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  return <HomePage onLoginClick={() => setShowLogin(true)} />
 }
 
 function AppContent() {

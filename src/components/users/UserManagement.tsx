@@ -5,6 +5,7 @@ import { UserProfile } from '@/types'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { 
   Settings, 
   Users, 
@@ -13,7 +14,9 @@ import {
   Shield, 
   Eye,
   UserCheck,
-  UserX
+  UserX,
+  UserPlus,
+  Trash2
 } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 
@@ -27,7 +30,21 @@ export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<UserWithAuth[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<UserWithAuth | null>(null)
-  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'detail' | 'create'>('list')
+  
+  // Create user form state
+  const [createUserForm, setCreateUserForm] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+    role: 'USER' as 'USER' | 'ADMIN'
+  })
+  const [createUserLoading, setCreateUserLoading] = useState(false)
+  const [createUserError, setCreateUserError] = useState('')
+  
+  // Delete user state
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false)
 
   const loadUsers = async () => {
     setLoading(true)
@@ -43,15 +60,14 @@ export const UserManagement: React.FC = () => {
         return
       }
 
-      // Get auth users (admin only feature - in production this should be restricted)
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+      // Note: We can't get auth users from frontend, so we'll use profiles only
+      const authUsers = null
 
       const combinedUsers = profiles?.map(profile => {
-        const authUser = authUsers?.users?.find(u => u.id === profile.id)
         return {
           ...profile,
-          email: authUser?.email,
-          created_at_auth: authUser?.created_at
+          email: profile.email || 'Δεν έχει οριστεί', // Read email from profile
+          created_at_auth: profile.created_at
         }
       }) || []
 
@@ -111,6 +127,111 @@ export const UserManagement: React.FC = () => {
   const goBackToList = () => {
     setSelectedUser(null)
     setViewMode('list')
+    setCreateUserForm({ email: '', password: '', fullName: '', role: 'USER' })
+    setCreateUserError('')
+    setDeleteUserId(null)
+  }
+
+  const createUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreateUserError('')
+    setCreateUserLoading(true)
+    
+    try {
+      // Create user using Supabase auth directly
+      const { data, error } = await supabase.auth.signUp({
+        email: createUserForm.email,
+        password: createUserForm.password,
+        options: {
+          data: {
+            full_name: createUserForm.fullName,
+            role: createUserForm.role
+          }
+        }
+      })
+
+      if (error) {
+        setCreateUserError('Σφάλμα δημιουργίας χρήστη: ' + error.message)
+        setCreateUserLoading(false)
+        return
+      }
+
+      if (data.user) {
+        // Create user profile using upsert to handle duplicates
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: data.user.id,
+            full_name: createUserForm.fullName,
+            email: createUserForm.email,
+            role: createUserForm.role,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError)
+          setCreateUserError('Χρήστης δημιουργήθηκε αλλά υπήρξε σφάλμα με το προφίλ: ' + profileError.message)
+          setCreateUserLoading(false)
+          return
+        }
+      }
+
+      // Success - reset form and reload users
+      setCreateUserForm({ email: '', password: '', fullName: '', role: 'USER' })
+      await loadUsers()
+      setViewMode('list')
+    } catch (error) {
+      console.error('Error creating user:', error)
+      setCreateUserError('Σφάλμα δημιουργίας χρήστη: ' + (error as Error).message)
+    } finally {
+      setCreateUserLoading(false)
+    }
+  }
+
+  const deleteUser = async (userId: string) => {
+    setDeleteUserLoading(true)
+    try {
+      // Get current session for authorization
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.access_token) {
+        console.error('No authorization token')
+        return
+      }
+
+      // Call Edge Function to completely delete user
+      const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/admin-delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        console.error('Error deleting user:', result.error)
+        return
+      }
+      
+      await loadUsers()
+      setDeleteUserId(null)
+    } catch (error) {
+      console.error('Error deleting user:', error)
+    } finally {
+      setDeleteUserLoading(false)
+    }
+  }
+
+  const confirmDeleteUser = (userId: string) => {
+    setDeleteUserId(userId)
+  }
+
+  const cancelDeleteUser = () => {
+    setDeleteUserId(null)
   }
 
   // Check if current user is admin
@@ -276,15 +397,129 @@ export const UserManagement: React.FC = () => {
     )
   }
 
+  if (viewMode === 'create') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={goBackToList}>
+            ← Επιστροφή στη Λίστα
+          </Button>
+          <h2 className="text-2xl font-bold">Δημιουργία Νέου Χρήστη</h2>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Στοιχεία Νέου Χρήστη
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={createUser} className="space-y-6">
+              {createUserError && (
+                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20">
+                  {createUserError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label htmlFor="fullName" className="text-sm font-medium">
+                    Ονοματεπώνυμο *
+                  </label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="π.χ. Γιάννης Παπαδόπουλος"
+                    value={createUserForm.fullName}
+                    onChange={(e) => setCreateUserForm(prev => ({ ...prev, fullName: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium">
+                    Email *
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={createUserForm.email}
+                    onChange={(e) => setCreateUserForm(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="password" className="text-sm font-medium">
+                    Κωδικός Πρόσβασης *
+                  </label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Τουλάχιστον 6 χαρακτήρες"
+                    value={createUserForm.password}
+                    onChange={(e) => setCreateUserForm(prev => ({ ...prev, password: e.target.value }))}
+                    minLength={6}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="role" className="text-sm font-medium">
+                    Ρόλος Χρήστη *
+                  </label>
+                  <select
+                    id="role"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={createUserForm.role}
+                    onChange={(e) => setCreateUserForm(prev => ({ ...prev, role: e.target.value as 'USER' | 'ADMIN' }))}
+                    required
+                  >
+                    <option value="USER">Χρήστης</option>
+                    <option value="ADMIN">Διαχειριστής</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button 
+                  type="submit" 
+                  disabled={createUserLoading || !createUserForm.email || !createUserForm.password || !createUserForm.fullName}
+                  className="flex-1"
+                >
+                  {createUserLoading ? 'Δημιουργία...' : 'Δημιουργία Χρήστη'}
+                </Button>
+                <Button type="button" variant="outline" onClick={goBackToList}>
+                  Ακύρωση
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Διαχείριση Χρηστών ({users.length})
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Διαχείριση Χρηστών ({users.length})
+            </CardTitle>
+            <Button 
+              onClick={() => setViewMode('create')}
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Νέος Χρήστης
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
@@ -364,6 +599,15 @@ export const UserManagement: React.FC = () => {
                           <UserCheck className="h-4 w-4" />
                         )}
                       </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => confirmDeleteUser(user.id)}
+                        disabled={user.id === userProfile?.id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -415,6 +659,41 @@ export const UserManagement: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteUserId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="text-destructive">Επιβεβαίωση Διαγραφής</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-6">
+                Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτόν τον χρήστη; 
+                Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.
+              </p>
+              <div className="flex gap-4">
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteUser(deleteUserId)}
+                  disabled={deleteUserLoading}
+                  className="flex-1"
+                >
+                  {deleteUserLoading ? 'Διαγραφή...' : 'Διαγραφή'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={cancelDeleteUser}
+                  disabled={deleteUserLoading}
+                  className="flex-1"
+                >
+                  Ακύρωση
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

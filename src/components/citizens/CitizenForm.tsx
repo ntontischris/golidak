@@ -74,6 +74,7 @@ export const CitizenForm: React.FC<CitizenFormProps> = ({ citizen, onSave, onCan
         ...formData,
         municipality: formData.municipality || null,
         electoral_district: formData.electoral_district || null,
+        last_contact_date: formData.last_contact_date || null,
         created_by: user?.id
       }
 

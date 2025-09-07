@@ -15,9 +15,12 @@
       "mcp__playwright__browser_click",
       "mcp__github_com_supabase-community_supabase-mcp__list_tables",
       "mcp__github_com_supabase-community_supabase-mcp__execute_sql",
-      "mcp__playwright__browser_wait_for"
+      "mcp__playwright__browser_wait_for",
+      "Bash(curl:*)",
+      "mcp__github_com_supabase-community_supabase-mcp__deploy_edge_function"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "github.com/supabase-community/supabase-mcp",
     "playwright"

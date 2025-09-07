@@ -3,13 +3,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { LogIn, Mail, Lock } from 'lucide-react'
+import { LogIn, Mail, Lock, ArrowLeft } from 'lucide-react'
 
 interface LoginFormProps {
-  onToggleMode: () => void
+  onBack: () => void
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({ onBack }) => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -96,11 +96,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
           <div className="text-center">
             <Button
               type="button"
-              variant="link"
-              onClick={onToggleMode}
-              className="text-sm"
+              variant="outline"
+              onClick={onBack}
+              className="w-full flex items-center space-x-2"
             >
-              Δεν έχετε λογαριασμό; Εγγραφή
+              <ArrowLeft className="h-4 w-4" />
+              <span>Επιστροφή στην Αρχική</span>
             </Button>
           </div>
         </form>
